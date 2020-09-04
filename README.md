@@ -1,0 +1,1 @@
+# AL-wiki-image-scraper
