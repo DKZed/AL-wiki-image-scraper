@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from os import makedirs, path
 from PIL import Image, ImageDraw, ImageFont
 from requests import get
-from urllib import request
+from urllib import parse, request
 
 wiki_url = 'https://azurlane.koumakan.jp'
 ship_list_href = '/List_of_Ships'
@@ -49,10 +49,14 @@ def download_image(image_href, ship_name, is_icon, hull_type):
     #     directory = path.join(directory, 'chibi')
     if not path.isdir(directory):
         makedirs(directory)
-    print('Downloading to ' + directory)
     image_path = path.join(directory, file_name)
+    image_path = parse.unquote(image_path)
+    if path.isfile(image_path):
+        print(image_path + ' already exists. Skipping...')
+        return
+    print('Downloading to ' + image_path)
     request.urlretrieve(image_link, image_path)
-    add_text(ship_name.replace('_', ' '), image_path)
+    add_text(parse.unquote((ship_name.replace('_', ' '))), image_path)
 
 
 def get_class(soup):
@@ -60,13 +64,13 @@ def get_class(soup):
         return 'DD'
     elif len(soup.body.findAll(text='Light Cruiser')) > 1:
         return 'CL'
-    elif len(soup.body.findAll(text=['Heavy Cruiser', 'Large Cruiser'])) > 1:
+    elif len(soup.body.findAll(text=['Heavy Cruiser', 'Large Cruiser'])) > 2:
         return 'CA'
-    elif len(soup.body.findAll(text='Carrier')) > 1:
+    elif len(soup.body.findAll(text=['Aircraft Carrier', 'Light Aircraft Carrier'])) > 2:
         return 'CV'
-    elif len(soup.body.findAll(text=['Battleship', 'Battlecruiser'])) > 1:
+    elif len(soup.body.findAll(text=['Battleship', 'Battlecruiser', 'Monitor'])) > 3:
         return 'BB'
-    elif len(soup.body.findAll(text='Submarine')) > 1:
+    elif len(soup.body.findAll(text='Submarine')) > 1 or len(soup.body.findAll(text='Submarine Carrier')) > 0:
         return 'SV'
     else:
         return 'Other'
